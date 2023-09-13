@@ -1,0 +1,560 @@
+---
+title: "Using Data to Understand Links Between Tourism and Sustainable Development"
+author: "Brian Stacy"
+format: 
+  revealjs:
+    chalkboard: true
+    theme: [simple, custom.scss]
+    slide-number: true
+    code-tools:
+        source: repo
+    dpi: 350
+title-slide-attributes: 
+  data-background-video: ./Figures/World_data.mp4
+  data-background-video-loop: true
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(here)
+library(wbstats)
+library(ggthemes)
+library(readxl)
+library(xts)
+library(highcharter)
+library(lubridate)
+# set directory
+dir <- here()
+
+
+```
+
+```{r}
+#| label: data
+
+# read in data on which economies are tourism dependent
+## Tourism data
+#use tourism data from UNWTO
+
+
+gdp_forcast_df <- read_csv(paste0(dir, "/Data/chart3_GDP_COVID_country.csv"))
+
+#use tourism data from UNWTO
+#read in iso3c codes to match to UN database
+iso_codes <- read_csv(paste0(dir, "/Data/iso_codes.csv")) %>%
+  rename(GeoAreaCode=geoAreaCode)
+#data from https://www.unwto.org/statistic/basic-tourism-statistics
+tourism_df <- read_excel(path=paste0(dir, '/Data/unwto-inbound-expenditure-data.xlsx'), skip=2) %>%
+  rename(GeoAreaCode=C.,
+         indicator=...5) %>% 
+  filter(!is.na(indicator)) %>%
+  pivot_longer(
+    cols=c(12:36),
+    names_to='date',
+    values_to='expenditure'
+  ) %>%
+  left_join(iso_codes) %>%
+  transmute(iso3c=iso3c,
+            date=as.numeric(date),
+            expenditure=1000000*as.numeric(expenditure) #convert expenditure from per million to per dollar
+            )
+
+
+#get GDP data from WDI
+wdi_join <- wb_data(
+  indicator=c('NY.GDP.MKTP.KD','SP.POP.TOTL'),
+  start_date=1995,
+  end_date=2019
+)
+
+country_data <- wb_countries()
+
+#join with gdp data
+tourism_df <- tourism_df %>%
+  left_join(wdi_join) %>%
+  mutate(tourism_gdp_share=100*expenditure/NY.GDP.MKTP.KD)
+
+#now look at this relationhsip in context of vulnerable employment
+
+tour_rel_df <- gdp_forcast_df %>%
+  left_join(tourism_df) %>%
+  select(-country, -iso2c) %>%
+  left_join(country_data) %>%
+  group_by(iso3c) %>%
+  fill(tourism_gdp_share) %>%
+  filter(!is.na(tourism_gdp_share)) %>%
+  mutate(tourism=case_when(
+           tourism_gdp_share>10 ~ ">= 10% GDP", 
+           between(tourism_gdp_share,5,10) ~ "5-10% GDP",
+           tourism_gdp_share<5 ~ "< 5% GDP", 
+                   )) %>%
+  filter(date==2019 | date==2020 | date==2021) %>%
+  pivot_wider(
+    id_cols=c('country','iso3c', 'region'),
+    values_from=c('gdp','SP.POP.TOTL','tourism_gdp_share', 'tourism'),
+    names_from=date,
+    names_glue = "{.value}_{date}"
+  ) %>%
+  mutate(change_gdp=100*(gdp_2021-gdp_2019)/gdp_2019) %>%
+  mutate(tourism=case_when(
+    !is.na(tourism_2019) ~ tourism_2019,
+    !is.na(tourism_2020) ~ tourism_2020,
+    !is.na(tourism_2021) ~ tourism_2021,
+  ))
+
+```
+
+
+
+## Introduction
+
+- Tourism is a major economic driver for many countries
+- Recent crises have highlighted the vulnerability of tourism
+    - COVID-19
+    - Climate change
+- Sustainable tourism is a key component of the UN Sustainable Development Goals (SDGs)
+    - Mentioned specifically in SDG 8, 12, and 14
+    - But relevant to many others
+
+## COVID-19 crisis
+
+Macao Airport traffic saw massive fall during pandemic
+
+```{r}
+#| label: covidtransportdf
+
+#read in data from Macao
+# Macao
+# https://www.camacau.com/en/OurBusiness/TrafficStatsPassengers
+macau_df <- read_csv(here("Data","macau_passenger_data.csv")) %>%
+  mutate(month=factor(month,
+      levels=c(
+      "Jan.",
+      "Feb.",
+      "Mar.",
+      "Apr.",
+      "May",
+      "Jun.",
+      "Jul.",
+      "Aug.", 
+      "Sep.",
+      "Oct.",
+      "Nov.",
+      "Dec."
+    )
+  ))
+
+#Create a date variable by combining year and month
+macau_df$date <- as.Date(paste(macau_df$year, as.numeric(macau_df$month), "01", sep = "-"))
+
+# Ensure the date is in the correct format (year-month-day)
+macau_df$date <- format(macau_df$date, format = "%Y-%m-%d")
+
+macau_df <- macau_df %>%
+  arrange(date) %>%
+  mutate(date=as.Date(date))
+
+
+
+# Create a highcharter time series plot
+highchart(type = "stock") %>%
+  hc_title(text = "Monthly Passengers - Macao International Airport") %>%
+  hc_xAxis(type = "datetime", title = list(text = "Date"),
+    dateTimeLabelFormats = list(
+      year = list(main = "%Y")
+    )) %>%
+  hc_yAxis(title = list(text = "Passengers")) %>%
+  hc_add_series(data = macau_df, hcaes(x = date, y = passengers), name = "Passengers", type = "line")
+
+```
+Source: [Macau International Airport Traffic Statistics](https://www.camacau.com/en/OurBusiness/TrafficStatsPassengers)
+
+
+## COVID-19 crisis {transition="fade" transition-speed="fast"}
+
+So did Heathrow.
+
+```{r}
+#| label: covidtransportdf2
+
+#read in data from Macau
+# Macau
+# https://www.camacau.com/en/OurBusiness/TrafficStatsPassengers
+heathrow_df <- read_excel(here("Data","July23-Heathrow-Monthly-Traffic-Statistics.xlsx"), skip=2) %>%
+  arrange(Month) %>%
+  mutate(date=as.Date(Month))
+
+
+
+# Create a highcharter time series plot
+highchart(type = "stock") %>%
+  hc_title(text = "Monthly Passengers - Heathrow International Airport") %>%
+  hc_xAxis(type = "datetime", title = list(text = "Date"),
+    dateTimeLabelFormats = list(
+      year = list(main = "%Y")
+    )) %>%
+  hc_yAxis(title = list(text = "Passengers")) %>%
+  hc_add_series(data = heathrow_df, hcaes(x = date, y = Passengers), name = "Passengers", type = "line")
+
+```
+Source: [Heathrow Traffic Statistics](https://www.heathrow.com/company/investor-centre/reports/traffic-statistics)
+
+
+## COVID-19 crisis {transition="fade" transition-speed="fast"}
+
+Singapore hotel revenue fell greatly.  
+
+```{r}
+#| label: covidtransportdf3
+
+#read in data from Macau
+# Macau
+# https://www.camacau.com/en/OurBusiness/TrafficStatsPassengers
+singapore_df <- read_excel(here("Data","singapore_hotel_data.xlsx"), sheet='T2',skip=9) %>%
+  filter(`Data Series`=="Hotel Room Revenue (Thousand Dollars)" ) %>%
+  pivot_longer(cols=c(-`Data Series`),
+               names_to='month',
+               values_to='revenue') %>%
+  mutate(year=substr(month,1,4),
+         month=substr(month,6,8)) %>%
+  mutate(month=factor(month,
+      levels=c(
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug", 
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    )
+  ))
+
+#Create a date variable by combining year and month
+singapore_df$date <- as.Date(paste(singapore_df$year, as.numeric(singapore_df$month), "01", sep = "-"))
+
+# Ensure the date is in the correct format (year-month-day)
+singapore_df$date <- format(singapore_df$date, format = "%Y-%m-%d")
+
+singapore_df <- singapore_df %>%
+  arrange(date) %>%
+  mutate(date=as.Date(date))
+
+# Create a highcharter time series plot
+highchart(type = "stock") %>%
+  hc_title(text = "Hotel Room Revenue (Thousand Dollars) - Singapore") %>%
+  hc_xAxis(type = "datetime", title = list(text = "Date"),
+    dateTimeLabelFormats = list(
+      year = list(main = "%Y")
+    )) %>%
+  hc_yAxis(title = list(text = "Revenue")) %>%
+  hc_add_series(data = singapore_df, hcaes(x = date, y = revenue), name = "Revenue", type = "line")
+
+```
+
+Source: [SingStat](https://www.singstat.gov.sg/find-data/search-by-theme/industry/tourism/latest-data)
+
+## Slow Economic Recovery
+
+* Stunning fall in tourism in many economies 
+
+* Motivated study of tourism dependent economies in World Bank SDG Atlas 2023.
+
+## SDG Atlas Chapter 8
+
+* How have economies recovered from COVID?    
+  - Compared pre-COVID economic forecasts to current forecasts for 188 economies
+  - Calculated how gap between pre-pandemic expected GDP and current projections
+  
+## 
+
+![](https://datatopics.worldbank.org/dataviz/atlas23-images/en/goal08/c10.png)
+
+
+## Tourism Dependent Economies Suffered
+
+```{r tourscat}
+# ggplot(tour_avg_df, aes(x=tourism, y=change_gdp)) +
+#   geom_col(fill='#ef233c') +
+#   ylab('Change in GDP 2019-2021') +
+#   xlab('Tourism as share of GDP') + 
+#   expand_limits(y=c(-10,2)) +
+#   labs(title=str_wrap('Economies dependent on tourism saw large drops in GDP from 2019-21',60),
+#        caption='Data on tourism expenditure from UNWTO.  Data on GDP from World Bank.') +
+#   theme_bw(  ) 
+#   
+#plot the data
+# Assuming you have the necessary data in the 'tour_rel_df' dataframe
+# Assuming you have the necessary data in the 'tour_rel_df' dataframe
+tour_rel_df <- tour_rel_df %>%
+  mutate(across(c('tourism_gdp_share_2019', 'change_gdp'), round, 2)) %>%
+  arrange(tourism_gdp_share_2019)
+
+# Calculate linear regression coefficients
+gdp_model <- loess(change_gdp ~ tourism_gdp_share_2019, data = tour_rel_df, degree=1)
+
+
+
+# Calculate regression line points
+x_values <- tour_rel_df$tourism_gdp_share_2019
+y_values <- predict(gdp_model)
+regression_data <- data.frame(tourism_gdp_share_2019 = x_values, change_gdp = y_values)
+
+
+# Create a series for the regression line
+regression_series <- list(
+  type = "line",
+  name = "Regression Line",
+  data = regression_data,
+  #marker = list(enabled = FALSE),
+  color = "red",  # Set line color
+  lineWidth = 2    # Set line width
+)
+
+legend_options <- list(
+  enabled = TRUE,                   # Enable the legend
+  align = "center",                 # Set the legend's horizontal alignment
+  layout = "vertical",              # Set the legend's layout (vertical or horizontal)
+  verticalAlign = "top",            # Set the legend's vertical alignment
+  itemStyle = list(fontWeight = "bold")  # Customize the legend item's style
+)
+
+# Create a Highcharter plot
+hchart(
+  tour_rel_df,
+  type='scatter',
+  hcaes(
+      x = tourism_gdp_share_2019,
+      y = change_gdp,
+      color=tourism,
+      name=country,
+      tooltip=list(
+        pointFormat = "<b>{point.name}</b><br> Tourism as share of GDP: {point.x}<br> Percentage Change in GDP 2019-21: {point.y}%"
+      )
+  )
+  ) %>%
+  hc_tooltip(
+    split = TRUE,
+    pointFormat = "<b>{point.name}</b><br> Tourism as share of GDP: {point.x}<br> Percentage Change in GDP 2019-21: {point.y}%"
+  )  %>%
+  hc_add_series(  
+    regression_data,
+    type = "line",
+    hcaes(
+      x = tourism_gdp_share_2019,
+      y = change_gdp),
+    color='red',
+    enableMouseTracking=FALSE
+    
+    ) %>%
+  hc_xAxis(
+    title = list(text = "Tourism as share of GDP"),
+    gridLineWidth = 1,
+    type='logarithmic'
+  ) %>%
+  hc_yAxis(
+    title = list(text = "Percentage Change in GDP 2019-21"),
+    gridLineWidth = 1
+  ) %>%
+  hc_title(
+    text = "Economies dependent on tourism saw large drops in GDP from 2019-21",
+    align = "center",
+    margin = 20
+  ) %>%
+  hc_subtitle(
+    text = "Data on tourism expenditure from UNWTO. Data on GDP from World Bank.",
+    align = "center",
+    margin = 10
+  ) %>%
+  hc_caption(
+    text="Fitted line produced using local 1st degree polynomial regression fitting."
+  ) %>%
+  hc_legend(legend_options)  
+
+  
+```
+
+## Macao 
+
+Macao still far below pre-pandemic projections
+
+```{r}
+macao_gdp <- gdp_forcast_df %>%
+  filter(iso3c=='MAC') %>%
+  mutate(across(c('gdp','gdp_forc20'), round,2))
+
+# Create a Highcharter plot
+highchart() %>%
+  hc_xAxis(categories = macao_gdp$date) %>%
+  hc_add_series(macao_gdp, "line", hcaes(x = date, y = gdp), name="Current GDP Projections",color='#8ecae6') %>%
+  hc_add_series(macao_gdp, "line", hcaes(x = date, y = gdp_forc20), name='January 2020 Projections', dashStyle='Dot', color='#023047') %>%
+  hc_chart(
+    type = "area",        # Use an area chart type
+    plotBackgroundColor = NULL  # Set plot background color to transparent
+  ) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_yAxis(title = list(text = "GDP (billions)")) %>%
+  hc_title(text = "Macao GDP vs. GDP Forecast 2020") 
+
+```
+
+
+## Aruba 
+
+Aruba has recovered further
+
+```{r}
+aruba_gdp <- gdp_forcast_df %>%
+  filter(iso3c=='ABW') %>%
+  mutate(across(c('gdp','gdp_forc20'), round,2))
+
+# Create a Highcharter plot
+highchart() %>%
+  hc_xAxis(categories = aruba_gdp$date) %>%
+  hc_add_series(aruba_gdp, "line", hcaes(x = date, y = gdp), name="Current GDP Projections",color='#8ecae6') %>%
+  hc_add_series(aruba_gdp, "line", hcaes(x = date, y = gdp_forc20), name='January 2020 Projections', dashStyle='Dot', color='#023047') %>%
+  hc_chart(
+    type = "area",        # Use an area chart type
+    plotBackgroundColor = NULL  # Set plot background color to transparent
+  ) %>%
+  hc_legend(enabled = TRUE) %>%
+  hc_yAxis(title = list(text = "GDP (billions)")) %>%
+  hc_title(text = "Aruba GDP vs. GDP Forecast 2020") 
+
+```
+
+
+
+
+## See more in SDG Atlas Chapter 8 {background-iframe="https://datatopics.worldbank.org/sdgatlas/goal-8-decent-work-and-economic-growth"}
+
+
+## Climate Change
+
+
+
+
+## Sea Level Rise
+
+```{r tourscat2}
+# ggplot(tour_avg_df, aes(x=tourism, y=change_gdp)) +
+#   geom_col(fill='#ef233c') +
+#   ylab('Change in GDP 2019-2021') +
+#   xlab('Tourism as share of GDP') + 
+#   expand_limits(y=c(-10,2)) +
+#   labs(title=str_wrap('Economies dependent on tourism saw large drops in GDP from 2019-21',60),
+#        caption='Data on tourism expenditure from UNWTO.  Data on GDP from World Bank.') +
+#   theme_bw(  ) 
+#   
+#plot the data
+# Assuming you have the necessary data in the 'tour_rel_df' dataframe
+# Assuming you have the necessary data in the 'tour_rel_df' dataframe
+elevation_df <- tour_rel_df %>%
+  left_join(wb_data(
+    indicator='AG.LND.EL5M.ZS',
+    start_date=2015,
+    end_date=2015
+  )) %>%
+  mutate(AG.LND.EL5M.ZS=round(AG.LND.EL5M.ZS,2))
+
+
+# Calculate linear regression coefficients
+elevation_model <- loess(AG.LND.EL5M.ZS ~ tourism_gdp_share_2019, data = elevation_df, degree=2)
+
+
+
+# Calculate regression line points
+x_values <- elevation_df$tourism_gdp_share_2019
+y_values <- predict(elevation_model)
+regression_data <- data.frame(tourism_gdp_share_2019 = x_values, change_gdp = y_values)
+
+
+# Create a series for the regression line
+regression_series <- list(
+  type = "line",
+  name = "Regression Line",
+  data = regression_data,
+  #marker = list(enabled = FALSE),
+  color = "red",  # Set line color
+  lineWidth = 2    # Set line width
+)
+
+legend_options <- list(
+  enabled = TRUE,                   # Enable the legend
+  align = "center",                 # Set the legend's horizontal alignment
+  layout = "vertical",              # Set the legend's layout (vertical or horizontal)
+  verticalAlign = "top",            # Set the legend's vertical alignment
+  itemStyle = list(fontWeight = "bold")  # Customize the legend item's style
+)
+
+# Create a Highcharter plot
+hchart(
+  elevation_df,
+  type='scatter',
+  hcaes(
+      x = tourism_gdp_share_2019,
+      y = AG.LND.EL5M.ZS,
+      color=tourism,
+      name=country,
+      tooltip=list(
+        pointFormat = "<b>{point.name}</b><br> Tourism as share of GDP: {point.x}<br> Percentage Land Area Under 5m: {point.y}%"
+      )
+  )
+  ) %>%
+  hc_tooltip(
+    split = TRUE,
+    pointFormat = "<b>{point.name}</b><br> Tourism as share of GDP: {point.x}<br> Percentage Land Area Under 5m: {point.y}%"
+  )  %>%
+  hc_add_series(  
+    regression_data,
+    type = "line",
+    hcaes(
+      x = tourism_gdp_share_2019,
+      y = change_gdp),
+    color='red',
+    enableMouseTracking=FALSE
+    
+    ) %>%
+  hc_xAxis(
+    title = list(text = "Tourism as share of GDP"),
+    gridLineWidth = 1,
+    type='logarithmic'
+  ) %>%
+  hc_yAxis(
+    title = list(text = "Percentage Land Area Under 5m"),
+    gridLineWidth = 1
+  ) %>%
+  hc_title(
+    text = "Many Economies dependent on tourism have large exposure to sea level rise.",
+    align = "center",
+    margin = 20
+  ) %>%
+  hc_subtitle(
+    text = "Data on tourism expenditure from UNWTO. Data on land area from World Bank.",
+    align = "center",
+    margin = 10
+  ) %>%
+  hc_caption(
+    text="Fitted line produced using local 1st degree polynomial regression fitting."
+  ) %>%
+  hc_legend(legend_options)  
+
+  
+```
+
+## 2020 SDG Atlas Chapter 14 on Coral Reefs {background-iframe="https://datatopics.worldbank.org/sdgatlas/archive/2020/goal-14-life-below-water/"}
+
+## Conclusions
+
+
+
+
+
