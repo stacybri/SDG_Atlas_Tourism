@@ -1,0 +1,169 @@
+---
+title: "Using Data to Understand Links Between Tourism and Sustainable Development"
+author: "Brian Stacy"
+format: 
+  revealjs:
+    chalkboard: true
+    theme: [simple, custom.scss]
+    slide-number: true
+    code-tools:
+        source: repo
+    dpi: 350
+title-slide-attributes: 
+  data-background-video: ./Figures/World_data.mp4
+  data-background-video-loop: true
+  data-background-size: contain
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#| label: setup
+library(tidyverse)
+library(here)
+library(wbstats)
+library(ggthemes)
+library(readxl)
+
+
+# set directory
+dir <- here()
+
+
+```
+
+```{r}
+#| label: data
+
+# read in data on which economies are tourism dependent
+## Tourism data
+#use tourism data from UNWTO
+
+
+gdp_forcast_df <- read_csv(paste0(dir, "/Data/chart3_GDP_COVID_country.csv"))
+
+#use tourism data from UNWTO
+#read in iso3c codes to match to UN database
+iso_codes <- read_csv(paste0(dir, "/Data/iso_codes.csv")) %>%
+  rename(GeoAreaCode=geoAreaCode)
+#data from https://www.unwto.org/statistic/basic-tourism-statistics
+tourism_df <- read_excel(path=paste0(dir, '/Data/unwto-inbound-expenditure-data.xlsx'), skip=2) %>%
+  rename(GeoAreaCode=C.,
+         indicator=...5) %>% 
+  filter(!is.na(indicator)) %>%
+  pivot_longer(
+    cols=c(12:36),
+    names_to='date',
+    values_to='expenditure'
+  ) %>%
+  left_join(iso_codes) %>%
+  transmute(iso3c=iso3c,
+            date=as.numeric(date),
+            expenditure=1000000*as.numeric(expenditure) #convert expenditure from per million to per dollar
+            )
+
+
+#get GDP data from WDI
+tour_gdp_join <- wb_data(
+  indicator=c('NY.GDP.MKTP.KD','SP.POP.TOTL'),
+  start_date=1995,
+  end_date=2019
+)
+
+country_data <- wb_countries()
+
+#join with gdp data
+tourism_df <- tourism_df %>%
+  left_join(tour_gdp_join) %>%
+  mutate(tourism_gdp_share=100*expenditure/NY.GDP.MKTP.KD)
+
+#now look at this relationhsip in context of vulnerable employment
+
+tour_rel_df <- gdp_forcast_df %>%
+  left_join(tourism_df) %>%
+  select(-country, -iso2c) %>%
+  left_join(country_data) %>%
+  group_by(iso3c) %>%
+  fill(tourism_gdp_share) %>%
+  filter(!is.na(tourism_gdp_share)) %>%
+  mutate(tourism=case_when(
+           tourism_gdp_share>10 ~ ">= 10% GDP", 
+           between(tourism_gdp_share,5,10) ~ "5-10% GDP",
+           tourism_gdp_share<5 ~ "< 5% GDP", 
+                   )) %>%
+  filter(date==2019 | date==2020 | date==2021) %>%
+  pivot_wider(
+    id_cols=c('country','iso3c', 'region'),
+    values_from=c('gdp','SP.POP.TOTL','tourism_gdp_share', 'tourism'),
+    names_from=date,
+    names_glue = "{.value}_{date}"
+  ) %>%
+  mutate(change_gdp=100*(gdp_2021-gdp_2019)/gdp_2019) %>%
+  mutate(tourism=case_when(
+    !is.na(tourism_2019) ~ tourism_2019,
+    !is.na(tourism_2020) ~ tourism_2020,
+    !is.na(tourism_2021) ~ tourism_2021,
+  ))
+
+```
+
+```{r tourscat}
+# ggplot(tour_avg_df, aes(x=tourism, y=change_gdp)) +
+#   geom_col(fill='#ef233c') +
+#   ylab('Change in GDP 2019-2021') +
+#   xlab('Tourism as share of GDP') + 
+#   expand_limits(y=c(-10,2)) +
+#   labs(title=str_wrap('Economies dependent on tourism saw large drops in GDP from 2019-21',60),
+#        caption='Data on tourism expenditure from UNWTO.  Data on GDP from World Bank.') +
+#   theme_bw(  ) 
+#   
+#plot the data
+ggplot(tour_rel_df, aes(x= tourism_gdp_share_2019, y=change_gdp, color=tourism)) +
+  geom_text(aes(label=iso3c)) +
+  xlab('Tourism as share of GDP') +
+  ylab('Percentage Change in GDP 2019-21') +
+  labs(
+    title = str_wrap('Economies dependent on tourism saw large drops in GDP from 2019-21',60),
+    caption = 'Data on tourism expenditure from UNWTO.  Data on GDP from World Bank.',
+    color='Tourism as share of GDP') +
+  theme_bw() +
+  theme(legend.position = 'top')
+  
+```
+
+## Introduction
+
+- Tourism is a major economic driver for many countries
+- Recent crises have highlighted the vulnerability of tourism
+    - COVID-19
+    - Climate change
+- Sustainable tourism is a key component of the UN Sustainable Development Goals (SDGs)
+    - Mentioned specifically in SDG 8, 12, and 14
+    - But relevant to many others
+
+## COVID-19 crisis
+
+Show plots of drops in air travel for several airports, Heathrow, Instanbul, Macau.
+
+## Slow Economic Recovery
+
+Show impacts of COVID-19 on GDP growth for several tourism dependent countries.
+
+
+## SDG Atlas Chapter 8 {background-iframe="https://datatopics.worldbank.org/sdgatlas/goal-8-decent-work-and-economic-growth"}
+
+Show the SDG atlas and how we tried to highlight these issues
+
+## Climate Change
+
+Show data on percent of land area under 5 meters elevation for several countries.
+
+
+## SDG 14 {background-iframe="https://datatopics.worldbank.org/sdgatlas/archive/2020/goal-14-life-below-water/"}
+
+Show the impacts of climate on coral reefs
+
+
+
+
