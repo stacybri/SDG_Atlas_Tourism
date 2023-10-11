@@ -480,10 +480,12 @@ highchart() %>%
 
 
 
-## See more in SDG Atlas Chapter 8 {background-image="https://datatopics.worldbank.org/dataviz/atlas23-images/en/goal08/c27.png"}
+## See more in SDG Atlas Chapter 8 
 
  See more in the 2023 SDG Atlas [Chapter 8](https://datatopics.worldbank.org/sdgatlas/goal-8-decent-work-and-economic-growth){preview-link="true"}
 
+
+![](https://datatopics.worldbank.org/dataviz/atlas23-images/en/goal08/c15.png)
 
 ## Climate Change
 
@@ -601,9 +603,11 @@ hchart(
   
 ```
 
-## 2020 SDG Atlas Chapter 14 on Coral Reefs {background-image="./Figures/chapter14.jpeg"}
+## 2020 SDG Atlas Chapter 14 on Coral Reefs 
 
 See more in the 2020 SDG Atlas [Chapter 14](https://datatopics.worldbank.org/sdgatlas/archive/2020/goal-14-life-below-water/){preview-link="true"}
+
+![](./Figures/chapter14.jpeg)
 
 
 # What are the success stories?
