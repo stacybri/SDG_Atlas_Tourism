@@ -120,6 +120,51 @@ tour_rel_df <- gdp_forcast_df %>%
     - Mentioned specifically in SDG 8, 12, and 14
     - But relevant to many others
 
+## World Bank Data {.smaller}
+
+World Bank [Open Data Portal](https://data.worldbank.org/).  All data free and open access
+
+
+  - Can access more than 1,400 indicators in World Development Indicators (WDI) 
+  - Microdata Library 
+  - Open Finances 
+  - Geospatial Data 
+  
+
+Data Sourced from:
+  
+  - World Bank
+  - International Organizations
+  - National Statistical Offices
+
+
+## World Bank Tourism Data
+
+
+```{=html}
+<div class="box" style="position: absolute; top: 75px; left: 10px">
+<iframe src="https://data.worldbank.org/share/widget?indicators=ER.MRN.PTMR.ZS&view=map" width='450' height='300' frameBorder='0' scrolling="no"  align='right' ></iframe>
+</div>
+<div class="box"  style="position: absolute; top: 75px; left: 510px">
+<iframe src="https://data.worldbank.org/share/widget?contextual=default&end=2020&indicators=IS.AIR.PSGR&locations=US-GB-IN-CN-FR-IT&start=2020&view=bar" width='450' height='300' frameBorder='0' scrolling="no" align='left'></iframe>
+</div>
+
+```
+
+
+```{=html}
+<div class="box" style="position: absolute; top: 425px; left: 10px">
+<img src="./Figures/microdatalib.png" width="450px">
+</div>
+
+<div class="box"  style="position: absolute; top: 425px; left: 510px">
+<iframe src="https://data.worldbank.org/share/widget?indicators=ST.INT.ARVL" width='450' height='300' frameBorder='0' scrolling="no" align='right' ></iframe>
+</div>
+```
+
+# Using Open Data for Sustainable Tourism
+
+
 ## COVID-19 crisis
 
 Macao Airport traffic saw massive fall during pandemic
@@ -555,6 +600,33 @@ hchart(
 ```
 
 ## 2020 SDG Atlas Chapter 14 on Coral Reefs {background-iframe="https://datatopics.worldbank.org/sdgatlas/archive/2020/goal-14-life-below-water/"}
+
+# What are the success stories?
+
+## Tourism and Sustainable Development
+
+World Bank case studies on building sustainable tourism using marine/terrestrial protected areas
+
+Found big impacts on local economies
+
+  - Measured using World Bank surveys in collaboration with local partners
+
+Source: [World Bank. 2021. Banking on Protected Areas: Promoting Sustainable Protected Area Tourism to Benefit Local Economies](http://hdl.handle.net/10986/35737)
+
+## What are the success stories?
+
+![Success Stories](./Figures/tourism_success_stories.png)
+
+## Big impacts on Incomes and Jobs
+
+![Income and Job Gains](./Figures/tourism_success_stories_jobs.png)
+
+
+## Return on Investment is at least 6:1
+
+![Return on Investment](./Figures/tourism_success_stories_roi.png)
+
+
 
 ## Conclusions
 

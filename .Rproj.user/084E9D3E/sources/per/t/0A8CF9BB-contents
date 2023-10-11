@@ -120,6 +120,30 @@ tour_rel_df <- gdp_forcast_df %>%
     - Mentioned specifically in SDG 8, 12, and 14
     - But relevant to many others
 
+## World Bank Data
+
+
+## World Bank Data
+
+ World Development Indicators
+```{=html}
+<div class="box">
+<iframe src="https://data.worldbank.org/share/widget?indicators=ST.INT.ARVL" width='450' height='300' frameBorder='0' scrolling="no" align='left' ></iframe>
+</div>
+<div class="box">
+<iframe src="https://data.worldbank.org/share/widget?indicators=ER.MRN.PTMR.ZS&view=map" width='450' height='300' frameBorder='0' scrolling="no"  align='right' ></iframe>
+</div>
+```
+
+Microdata and Geospatial Data
+![](./Figures/microdatalib.png)
+```{=html}
+<div class="box">
+<iframe width="500px" height="400px" align='right' src="https://maps.worldbank.org/projects?status=active,financially%20closed&embed=true&gef=true"></iframe>
+</div>
+
+```
+
 ## COVID-19 crisis
 
 Macao Airport traffic saw massive fall during pandemic
@@ -265,18 +289,7 @@ Source: [SingStat](https://www.singstat.gov.sg/find-data/search-by-theme/industr
 ## Slow Economic Recovery
 
 * Stunning fall in tourism in many economies 
-
-* Motivated study of tourism dependent economies in World Bank SDG Atlas 2023.
-
-## SDG Atlas Chapter 8
-
-* How have economies recovered from COVID?    
-  - Compared pre-COVID economic forecasts to current forecasts for 188 economies
-  - Calculated how gap between pre-pandemic expected GDP and current projections
-  
-## 
-
-![](https://datatopics.worldbank.org/dataviz/atlas23-images/en/goal08/c10.png)
+* Followed by a slow recovery
 
 
 ## Tourism Dependent Economies Suffered
@@ -382,6 +395,17 @@ hchart(
   
 ```
 
+
+## SDG Atlas Chapter 8
+
+* How have economies recovered from COVID?    
+  - Compared pre-COVID economic forecasts to current forecasts for 188 economies
+  - Calculated how gap between pre-pandemic expected GDP and current projections
+  
+## 
+
+![](https://datatopics.worldbank.org/dataviz/atlas23-images/en/goal08/c10.png)
+
 ## Macao 
 
 Macao still far below pre-pandemic projections
@@ -434,12 +458,16 @@ highchart() %>%
 
 
 
+
 ## See more in SDG Atlas Chapter 8 {background-iframe="https://datatopics.worldbank.org/sdgatlas/goal-8-decent-work-and-economic-growth"}
 
 
 ## Climate Change
 
-
+* Climate change is another major threat to tourism 
+* Many economies dependent on tourism are also vulnerable to climate change 
+  * Sea level rise is a major threat to many economies  
+  * As is coral reef degradation  
 
 
 ## Sea Level Rise
@@ -553,6 +581,10 @@ hchart(
 ## 2020 SDG Atlas Chapter 14 on Coral Reefs {background-iframe="https://datatopics.worldbank.org/sdgatlas/archive/2020/goal-14-life-below-water/"}
 
 ## Conclusions
+
+* Tourism is a major economic driver for many economies
+* Tourist dependent economies are vulnerable to shocks like COVID-19 and climate change
+* Data can help us understand these links and inform policy decisions
 
 
 
