@@ -615,16 +615,16 @@ Source: [World Bank. 2021. Banking on Protected Areas: Promoting Sustainable Pro
 
 ## What are the success stories?
 
-![Success Stories](./Figures/tourism_success_stories.png)
+![Success Stories](./Figures/tourism_success_stories.jpeg)
 
 ## Big impacts on Incomes and Jobs
 
-![Income and Job Gains](./Figures/tourism_success_stories_jobs.png)
+![Income and Job Gains](./Figures/tourism_success_stories_jobs.jpeg)
 
 
 ## Return on Investment is at least 6:1
 
-![Return on Investment](./Figures/tourism_success_stories_roi.png)
+![Return on Investment](./Figures/tourism_success_stories_roi.jpeg)
 
 
 
